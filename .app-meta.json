@@ -1,0 +1,7 @@
+{
+  "description": "picawish & multi-site visitor analytics — hourly stats updates and notifications",
+  "icon": "TrendingUp",
+  "sharedLibs": [
+    "android-feedback-lib"
+  ]
+}
