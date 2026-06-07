@@ -11,3 +11,6 @@ local.properties
 
 # Bind-mounted feedback library
 feedback-lib/
+
+# Local build config (holds STATS_TOKEN — never commit; repo is public)
+.env

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { FeedbackChat } from '@automate/feedback-lib/FeedbackChat';
 
 export const metadata: Metadata = {
   title: "picaStats",
-  description: "picawish & multi-site visitor analytics — hourly stats updates and notifications",
+  description:
+    "picawish & multi-site visitor analytics — hourly stats updates and notifications",
 };
 
 export default function RootLayout({
@@ -14,9 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}
-        <FeedbackChat issuesPath="/feedback-lib-issues" />
-</body>
+      <body>{children}</body>
     </html>
   );
 }

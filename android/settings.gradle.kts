@@ -20,6 +20,8 @@ dependencyResolutionManagement {
     }
 }
 
+includeBuild("build-logic")
+
 rootProject.name = "picaStats"
 include(":app")
 include(":feedback-lib")

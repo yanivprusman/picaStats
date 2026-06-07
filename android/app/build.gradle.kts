@@ -4,7 +4,25 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    id("android-flavors")
 }
+
+val gitCommitCount = providers.exec {
+    commandLine("git", "rev-list", "--count", "HEAD")
+}.standardOutput.asText.get().trim().toIntOrNull() ?: 1
+
+val gitShortHash = providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+}.standardOutput.asText.get().trim().ifEmpty { "dev" }
+
+// Local, gitignored build config (android/.env). Holds the stats API token so it
+// stays out of the public repo; the value is baked into the APK at build time.
+val envFile = rootProject.file(".env")
+val envProps = java.util.Properties()
+if (envFile.exists()) envFile.inputStream().use { envProps.load(it) }
+val isProd = envProps.getProperty("IS_PROD", "false").toBoolean()
+val statsBaseUrl = envProps.getProperty("STATS_BASE_URL", "https://picastats.prod.ya-niv.com/")
+val statsToken = envProps.getProperty("STATS_TOKEN", "")
 
 android {
     namespace = "com.automatelinux.picaStats"
@@ -14,15 +32,12 @@ android {
         applicationId = "com.automatelinux.picaStats"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = gitCommitCount
+        versionName = "v${gitCommitCount} (${gitShortHash})"
 
-        // Read IS_PROD from .env at build time
-        val envFile = rootProject.file(".env")
-        val envProps = java.util.Properties()
-        if (envFile.exists()) envFile.inputStream().use { envProps.load(it) }
-        val isProd = envProps.getProperty("IS_PROD", "false").toBoolean()
         buildConfigField("boolean", "IS_PROD", isProd.toString())
+        buildConfigField("String", "STATS_BASE_URL", "\"$statsBaseUrl\"")
+        buildConfigField("String", "STATS_TOKEN", "\"$statsToken\"")
     }
 
     buildTypes {
@@ -80,6 +95,9 @@ dependencies {
     implementation(libs.retrofit.converter.scalars)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+
+    // Background work (hourly stats poll + notification)
+    implementation(libs.work.runtime)
 
     // Core
     implementation(libs.core.ktx)
