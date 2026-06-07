@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,7 +20,7 @@ val gitShortHash = providers.exec {
 // Local, gitignored build config (android/.env). Holds the stats API token so it
 // stays out of the public repo; the value is baked into the APK at build time.
 val envFile = rootProject.file(".env")
-val envProps = java.util.Properties()
+val envProps = Properties()
 if (envFile.exists()) envFile.inputStream().use { envProps.load(it) }
 val isProd = envProps.getProperty("IS_PROD", "false").toBoolean()
 val statsBaseUrl = envProps.getProperty("STATS_BASE_URL", "https://picastats.prod.ya-niv.com/")
