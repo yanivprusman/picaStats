@@ -17,13 +17,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +31,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import com.automatelinux.picaStats.BuildConfig
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,72 +48,66 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.automatelinux.picaStats.data.DayPoint
 import com.automatelinux.picaStats.data.StatsResponse
+import com.automatelinux.picaStats.util.ScreenTracker
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(
-    isProd: Boolean,
-    onReportIssue: () -> Unit,
     vm: StatsViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("picawish", fontWeight = FontWeight.Bold)
-                        Text(
-                            "visitor analytics",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { vm.refresh() }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    actionIconContentColor = MaterialTheme.colorScheme.onBackground,
-                ),
-            )
-        },
-        floatingActionButton = {
-            if (!isProd) {
-                FloatingActionButton(
-                    onClick = onReportIssue,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ) {
-                    Icon(
-                        Icons.Filled.BugReport,
-                        contentDescription = "Report Issue",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                    )
+    LaunchedEffect(Unit) {
+        ScreenTracker.currentScreen = "Stats Dashboard"
+    }
+
+    com.automatelinux.feedbacklib.ui.FeedbackOverlay(
+        modifier = Modifier.fillMaxSize(),
+        showFab = BuildConfig.FEEDBACK_ENABLED,
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("picawish", fontWeight = FontWeight.Bold)
+                            Text(
+                                "visitor analytics",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { vm.refresh() }) {
+                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                        actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    ),
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) { pad ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(pad),
+            ) {
+                when (val s = state) {
+                    is StatsViewModel.UiState.Loading ->
+                        CircularProgressIndicator(Modifier.align(Alignment.Center))
+
+                    is StatsViewModel.UiState.Error -> ErrorView(s.message) { vm.refresh() }
+
+                    is StatsViewModel.UiState.Success -> Dashboard(s.data, refreshing)
                 }
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { pad ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(pad),
-        ) {
-            when (val s = state) {
-                is StatsViewModel.UiState.Loading ->
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-
-                is StatsViewModel.UiState.Error -> ErrorView(s.message) { vm.refresh() }
-
-                is StatsViewModel.UiState.Success -> Dashboard(s.data, refreshing)
             }
         }
     }

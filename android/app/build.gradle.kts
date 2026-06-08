@@ -78,9 +78,6 @@ dependencies {
     implementation(libs.compose.material.icons)
     debugImplementation(libs.compose.ui.tooling)
 
-    // Navigation
-    implementation(libs.navigation.compose)
-
     // Lifecycle
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.runtime.compose)
@@ -105,6 +102,6 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.activity.compose)
 
-    // Feedback lib
-    implementation(project(":feedback-lib"))
+    // Feedback lib (dev flavor only)
+    "devImplementation"(project(":feedback-lib"))
 }

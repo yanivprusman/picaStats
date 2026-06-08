@@ -1,6 +1,9 @@
 package com.automatelinux.picaStats.di
 
+import com.automatelinux.feedbacklib.FeedbackConfig
+import com.automatelinux.feedbacklib.data.api.FeedbackApi
 import com.automatelinux.picaStats.BuildConfig
+import com.automatelinux.picaStats.util.ScreenTracker
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,37 +12,40 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.converter.scalars.ScalarsConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object NetworkModule {
+object FeedbackModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideFeedbackApi(): FeedbackApi {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BASIC
         }
-        return OkHttpClient.Builder()
+
+        val client = OkHttpClient.Builder()
             .addInterceptor(logging)
             .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.MINUTES)
+            .writeTimeout(15, TimeUnit.SECONDS)
             .build()
+
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.STATS_BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(FeedbackApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BuildConfig.STATS_BASE_URL)
-            .client(client)
-            .addConverterFactory(ScalarsConverterFactory.create())
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
+    fun provideFeedbackConfig(): FeedbackConfig =
+        FeedbackConfig(
+            appName = "picaStats",
+            currentScreenProvider = { ScreenTracker.currentScreen },
+        )
 }
